@@ -34,10 +34,6 @@ async function scrapeDarazProducts(productURL) {
   const priceElement = await page.$('.pdp-price.pdp-price_type_normal.pdp-price_color_orange.pdp-price_size_xl');
   const price = await page.evaluate(element => element.textContent, priceElement);
 
-  console.log("Title: ", title);
-  console.log("Price: ", price);
-  console.log("Images: ", imagesList);
-
   const brandElement = await page.$('.pdp-link.pdp-link_size_s.pdp-link_theme_blue.pdp-product-brand__brand-link');
   const brand = brandElement ? await page.evaluate(element => element.textContent, brandElement) : null;
 
@@ -99,16 +95,6 @@ async function scrapeDarazProducts(productURL) {
   const inTheBoxElement = await page.$('.html-content.box-content-html');
   const inTheBox = inTheBoxElement ? await page.evaluate(element => element.textContent, inTheBoxElement) : null;
 
-  console.log("Brand: ", brand);
-  console.log("Shipping fee: ", shippingFee);
-  if(productHighlightsList.length > 0)
-    console.log("Product Highlights: ", productHighlightsList);
-  if(productDetailsList.length > 0)
-    console.log("Product Details: ", productDetailsList);
-  if(additionalDetailsList.length > 0)
-    console.log("Additional Details: ", additionalDetailsList);
-  console.log("What's in the box: ", inTheBox);
-
   const productData = {
     title: title,
     price: price,
@@ -121,13 +107,13 @@ async function scrapeDarazProducts(productURL) {
     inTheBox: inTheBox,
   };
   console.log(productData);
-  return productData;
+  return { success: true, data: productData };
 } catch (error) {
-  console.error("Error occurred while scraping: ", error);
-  throw error;
+  console.log("Error occurred while scraping: ", error);
+  return { success: false, error: error.message };
 } finally{
-  // Close the browser
   await browser.close();
 }
 }
+
 module.exports = scrapeDarazProducts;

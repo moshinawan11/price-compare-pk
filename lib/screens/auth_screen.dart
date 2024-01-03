@@ -81,7 +81,6 @@ class _AuthCardState extends State<AuthCard> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) {
-      // Invalid!
       return;
     }
     _formKey.currentState!.save();
@@ -90,13 +89,11 @@ class _AuthCardState extends State<AuthCard> {
     });
     try {
       if (_authMode == AuthMode.Login) {
-        // Log user in
         await Provider.of<Auth>(context, listen: false).login(
           _authData["username"]!,
           _authData["password"]!,
         );
       } else {
-        // Sign user up
         await Provider.of<Auth>(context, listen: false).signup(
           _authData["username"]!,
           _authData["password"]!,
@@ -109,7 +106,6 @@ class _AuthCardState extends State<AuthCard> {
       const errorMessage = "An error occured. Please try again later";
       _showErrorDialog(errorMessage);
     }
-
     setState(() {
       _isLoading = false;
     });
@@ -158,7 +154,6 @@ class _AuthCardState extends State<AuthCard> {
                     if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value)) {
                       return 'Username can only contain letters, numbers, and underscores!';
                     }
-                    // Add any other specific validation rules for the username here
                     return null;
                   },
                   onSaved: (value) {
@@ -212,12 +207,10 @@ class _AuthCardState extends State<AuthCard> {
                       ),
                       padding:
                           EdgeInsets.symmetric(horizontal: 30.0, vertical: 8.0),
-                      backgroundColor: Color.fromARGB(255, 8, 30,
-                          65), // Set button background color to blue
-                      elevation: 5, // Add some elevation to the button
-                      onSurface:
-                          Colors.grey, // Set color when button is pressed
-                      primary: Colors.white, // Set text color to white
+                      backgroundColor: Color.fromARGB(255, 8, 30, 65),
+                      elevation: 5,
+                      onSurface: Colors.grey,
+                      primary: Colors.white,
                       textStyle: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,

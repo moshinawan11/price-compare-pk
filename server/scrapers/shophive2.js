@@ -1,9 +1,7 @@
 const puppeteer = require('puppeteer');
 
-async function scrapeShophiveProducts() {
-  const browser = await puppeteer.launch({
-    headless: false
-  });
+async function scrapeShophiveProducts(productURL) {
+  const browser = await puppeteer.launch();
   
   let productData = {};
 
@@ -12,8 +10,7 @@ async function scrapeShophiveProducts() {
 
     await page.setDefaultNavigationTimeout(0);
 
-    // Navigate to the website
-    await page.goto('https://www.shophive.com/d-link-ncbc6ugry305-23awg-cat-6-utp-cable-roll-1000ft/');
+    await page.goto(`${productURL}`);
 
     const titleElement = await page.$('.page-title span');
     productData.title = await page.evaluate(element => element.textContent, titleElement);
@@ -68,13 +65,13 @@ async function scrapeShophiveProducts() {
 
     console.log("Product Data: ", productData);
 
-    return productData;
+    return { success: true, data: productData };
   } catch(error) {
     console.log("Error occurred while scraping data", error);
-    throw error;
+    return { success: false, error: error.message };
   } finally {
     await browser.close();
   }
 }
 
-scrapeShophiveProducts();
+module.exports = scrapeShophiveProducts;

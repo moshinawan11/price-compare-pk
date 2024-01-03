@@ -1,18 +1,13 @@
 import "package:flutter/material.dart";
 import 'package:price_compare_pk/models/daraz_product_details.dart';
-import 'package:price_compare_pk/widgets/product_highlights_widget.dart';
-import '../models/products.dart';
-import "../data2.dart";
-import '../widgets/product_info_widget.dart';
-import '../widgets/product_availability_widget.dart';
-import "../widgets/product_details_widget.dart";
+import '../widgets/daraz_product_details/product_details_widget.dart';
 import 'package:provider/provider.dart';
 import '../providers/products_provider.dart';
-import '../screens/navigation_bars.dart';
-import '../models/product.dart';
 import '../providers/products_provider.dart';
-import '../widgets/additional_details_widget.dart';
+import '../widgets/daraz_product_details/additional_details_widget.dart';
+import '../screens/daraz_price_alert_screen.dart';
 import 'dart:math' as math;
+import 'package:url_launcher/url_launcher.dart';
 
 class DarazProductDetailsScreen extends StatefulWidget {
   final String productURL;
@@ -43,6 +38,15 @@ class _DarazProductDetailsScreenState extends State<DarazProductDetailsScreen> {
     });
   }
 
+  void _launchProductURL() async {
+    if (!await launchUrl(
+      Uri.parse(widget.productURL),
+      mode: LaunchMode.externalApplication,
+    )) {
+      throw Exception('Could not launch');
+    }
+  }
+
   Future<void> fetchProductDetails() async {
     try {
       await Provider.of<ProductsProvider>(context, listen: false)
@@ -52,7 +56,6 @@ class _DarazProductDetailsScreenState extends State<DarazProductDetailsScreen> {
             .selectedDarazProduct;
       });
     } catch (error) {
-      // Handle error if product details couldn't be fetched
       print('Error occurred while fetching product details: $error');
     }
   }
@@ -65,12 +68,10 @@ class _DarazProductDetailsScreenState extends State<DarazProductDetailsScreen> {
     //bool isFavorite = productsProvider.isFavorite(product);
     if (product == null) {
       return Scaffold(
-        appBar: AppBar(
-          title: Text('Product Details'),
-        ),
         body: Center(
           child: CircularProgressIndicator(),
         ),
+        backgroundColor: Color.fromARGB(255, 8, 30, 65),
       );
     }
     return Scaffold(
@@ -151,7 +152,6 @@ class _DarazProductDetailsScreenState extends State<DarazProductDetailsScreen> {
                     ),
                   ),
                   SizedBox(height: 10),
-                  // New Container to display price, arrow button, and store logo
                 ],
               ),
             ),
@@ -178,12 +178,12 @@ class _DarazProductDetailsScreenState extends State<DarazProductDetailsScreen> {
                         ),
                       ),
                       SizedBox(height: 10),
-                      // Add more product details as needed
                       ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          _launchProductURL();
+                        },
                         style: ElevatedButton.styleFrom(
-                          primary: Colors
-                              .orange, // Set button background color to orange
+                          primary: Colors.orange,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -213,7 +213,6 @@ class _DarazProductDetailsScreenState extends State<DarazProductDetailsScreen> {
                       ),
                     ],
                   ),
-                  // Display the store logo image here
                   Image.asset(
                     "assets/images/${widget.storeName}.png",
                     height: 120,
@@ -222,10 +221,42 @@ class _DarazProductDetailsScreenState extends State<DarazProductDetailsScreen> {
                 ],
               ),
             ),
-            SizedBox(
-              height: 20,
-            ),
-            //ProductHighlights(product!.productHighlights),
+            // ElevatedButton(
+            //   onPressed: () {
+            //     Navigator.of(context).push(
+            //       MaterialPageRoute(
+            //         builder: (context) => DarazPriceAlertScreen(product),
+            //       ),
+            //     );
+            //   },
+            //   style: ElevatedButton.styleFrom(
+            //     primary: Colors.orange,
+            //     shape: RoundedRectangleBorder(
+            //       borderRadius: BorderRadius.circular(10),
+            //     ),
+            //     padding: EdgeInsets.symmetric(horizontal: 85, vertical: 12),
+            //   ),
+            //   child: Row(
+            //     mainAxisSize: MainAxisSize.min,
+            //     children: [
+            //       Text(
+            //         'Set Price Alert',
+            //         style: TextStyle(
+            //           color: Colors.white,
+            //           fontSize: 20,
+            //         ),
+            //       ),
+            //       SizedBox(width: 10),
+            //       Icon(
+            //         Icons.notification_add,
+            //         color: Colors.white,
+            //       ),
+            //     ],
+            //   ),
+            // ),
+            // SizedBox(
+            //   height: 40,
+            // ),
             ProductDetails(product!.productDetails),
             AdditionalDetailsWidget(
                 additionalDetails: product!.additionalDetails),

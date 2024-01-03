@@ -3,7 +3,7 @@ import '../models/products.dart';
 import "../data.dart";
 import '../widgets/product_info_widget.dart';
 import '../widgets/product_availability_widget.dart';
-import "../widgets/product_details_widget.dart";
+import '../widgets/daraz_product_details/product_details_widget.dart';
 import 'package:provider/provider.dart';
 import '../providers/products_provider.dart';
 import '../screens/navigation_bars.dart';

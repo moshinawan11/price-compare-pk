@@ -23,36 +23,35 @@ class _SearchProductState extends State<SearchProduct> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // This will be executed after initState has completed.
       FocusScope.of(context).requestFocus(_searchFocusNode);
     });
   }
 
   searchForProduct() async {
-    try {
-      setState(() {
-        isLoading = true;
-      });
-
-      String searchedTerm = searchedProduct.text;
-      await Provider.of<ProductsProvider>(context, listen: false)
-          .searchForProduct(searchedTerm);
-
-      setState(() {
-        isLoading = false;
-      });
-    } catch (error) {
-      print(error);
-      setState(() {
-        isLoading = false;
-      });
+    String searchedTerm = searchedProduct.text;
+    if (searchedTerm != '') {
+      try {
+        setState(() {
+          isLoading = true;
+        });
+        await Provider.of<ProductsProvider>(context, listen: false)
+            .searchForProduct(searchedTerm);
+        setState(() {
+          isLoading = false;
+        });
+        productSearched = true;
+      } catch (error) {
+        print(error);
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
   Widget build(BuildContext context) {
     final productsProvider = Provider.of<ProductsProvider>(context);
 
-    // Get the searched products from the provider
     foundProducts = productsProvider.searchedProducts;
 
     return GestureDetector(
@@ -80,7 +79,6 @@ class _SearchProductState extends State<SearchProduct> {
                 onEditingComplete: () {
                   searchForProduct();
                   FocusScope.of(context).unfocus();
-                  productSearched = true;
                 },
                 decoration: InputDecoration(
                   prefixIcon: Icon(
@@ -115,43 +113,38 @@ class _SearchProductState extends State<SearchProduct> {
             ),
           ]),
         ),
-        body: SingleChildScrollView(
-          child: Container(
-            color: Color.fromARGB(255, 8, 30, 65),
-            child: Column(
-              children: [
-                SizedBox(
-                  height: 20,
-                ),
-                isLoading // Show the loading spinner if isLoading is true
-                    ? Center(
-                        child: CircularProgressIndicator(),
-                      )
-                    : foundProducts.length > 0
-                        ? ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: foundProducts.length,
-                            itemBuilder: (ctx, index) {
-                              final product = foundProducts[index];
-                              return ChangeNotifierProvider.value(
-                                value: productsProvider,
-                                child: SearchedProduct(product),
-                              );
-                            },
-                          )
-                        : productSearched
-                            ? Center(
-                                child: Text(
-                                  "No products found",
-                                  style: TextStyle(
-                                      fontSize: 20, color: Colors.white),
-                                ),
-                              )
-                            : SizedBox(
-                                height: 40,
+        body: Container(
+          color: Color.fromARGB(255, 8, 30, 65),
+          child: ListView(
+            children: [
+              SizedBox(
+                height: 20,
+              ),
+              isLoading
+                  ? Center(
+                      child: CircularProgressIndicator(),
+                    )
+                  : foundProducts.length > 0
+                      ? Column(
+                          children: foundProducts.map((product) {
+                            return ChangeNotifierProvider.value(
+                              value: productsProvider,
+                              child: SearchedProduct(product),
+                            );
+                          }).toList(),
+                        )
+                      : productSearched
+                          ? Center(
+                              child: Text(
+                                "No products found",
+                                style: TextStyle(
+                                    fontSize: 20, color: Colors.white),
                               ),
-              ],
-            ),
+                            )
+                          : SizedBox(
+                              height: 40,
+                            ),
+            ],
           ),
         ),
         backgroundColor: Color.fromARGB(255, 8, 30, 65),

@@ -3,7 +3,7 @@ class MegaProduct {
   String price;
   String image;
   String? brand;
-  Map<String, Map<String, String>>? productSpecs;
+  Map<String, Map<String, dynamic>>? productSpecs;
 
   MegaProduct({
     required this.title,

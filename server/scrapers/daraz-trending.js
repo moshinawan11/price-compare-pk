@@ -94,4 +94,4 @@ async function scrapeDarazTrendingProducts() {
   }
 }
 
-module.exports = scrapeDarazTrendingProducts;
+scrapeDarazTrendingProducts();

@@ -9,7 +9,6 @@ async function scrapePriceoyeProducts(productURL) {
 
     await page.setDefaultNavigationTimeout(0);
 
-    // Navigate to the website
     await page.goto(`${productURL}`);
 
     const titleElement = await page.$('.product-title h3');
@@ -37,7 +36,6 @@ async function scrapePriceoyeProducts(productURL) {
       }
     }
 
-    // Select and parse the product specifications
     productData.specifications = {};
     const specsTables = await page.$$('.column.column-80 table.p-spec-table');
 
@@ -60,11 +58,11 @@ async function scrapePriceoyeProducts(productURL) {
     }
 
     console.log("Product Data: ", productData);
-    return productData;
+    return { success: true, data: productData };
     
   } catch (error) {
     console.log("Error occurred while parsing data", error);
-    throw error;
+    return { success: false, error: error.message };
   } finally {
     await browser.close();
   }

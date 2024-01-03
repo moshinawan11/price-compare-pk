@@ -1,10 +1,10 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 
-async function scrapeMegaProducts() {
+async function scrapeMegaProducts(productURL) {
   try {
     // Fetch the HTML content of the page
-    const response = await axios.get('https://www.mega.pk/airconditioners_products/22350/Gree-Gs-12fith3w-10-Ton-Heat---Cool-Inverter-Wall-Mount-WiFi.html');
+    const response = await axios.get(`${productURL}`);
     const htmlContent = response.data;
 
     // Use Cheerio to load and parse the HTML
@@ -14,10 +14,6 @@ async function scrapeMegaProducts() {
     const image = $('#main-prod-img').attr('src');
     const title = $('.product-title').text().trim();
     const price = $('#price').text().trim();
-
-    console.log("Title: ", title);
-    console.log("Price: ", price);
-    console.log("Image: ", image);
 
     const brandElement = $('.blue-cat-link.blue-link span meta');
     const brand = brandElement.attr('content');
@@ -38,28 +34,25 @@ async function scrapeMegaProducts() {
         const tdData = $(tdElements[1]).text().trim();
         productSpecsMap.get(currentTh).set(tdLabel, tdData);
       }
-    }); 
-
-    console.log("Brand: ", brand);
-    console.log("Product Specs: ", productSpecsMap);
-
-    const productData = {
-      title: title,
-      price: price,
-      image: image,
-      brand: brand,
-      productSpecs: Array.from(productSpecsMap.entries()).reduce((obj, [key, value]) => {
-        obj[key] = Object.fromEntries(value);
-        return obj;
-      }, {})
-    };
-    console.log(productData);
-
-    return productData;
-
+    });
+    
+    if(image && price && image){
+      const productData = {
+        title: title,
+        price: price,
+        image: image,
+        brand: brand,
+        productSpecs: Array.from(productSpecsMap.entries()).reduce((obj, [key, value]) => {
+          obj[key] = Object.fromEntries(value);
+          return obj;
+        }, {})
+      };
+      console.log(productData);
+      return { success: true, data: productData };
+    }
   } catch (error) {
-    console.error("Error occurred:", error);
-    throw error;
+    console.log("Error occured", error);
+    return { success: false, error: error.message };
   }
 }
 

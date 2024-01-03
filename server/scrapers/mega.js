@@ -72,8 +72,7 @@ async function scrapeMegaProducts(searchString) {
       return productList;
       
   } catch(error){
-    console.error('Error occurred while scraping Mega:', error.message);
-    throw error;
+    console.log('Error occurred while scraping Mega:', error.message);
   } finally {
     await browser.close();
   }

@@ -64,7 +64,7 @@ async function scrapePriceoyeTrendingProducts() {
     return productList;
 
   } catch (error) {
-    console.error('Error occurred while scraping Priceoye:', error.message);
+    console.log('Error occurred while scraping Priceoye:', error.message);
     throw error;
   } finally {
     // Close the browser when done

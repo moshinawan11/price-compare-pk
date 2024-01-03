@@ -2,32 +2,24 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { Sequelize, DataTypes } = require('sequelize');
-const mysql = require('mysql2');
-const http = require('http');
-const querystring = require('querystring');
 const DUMMY_PRODUCTS = require("./products_dummy_data.js");
 const dummy_products = require('./products_dummy_data2.js');
-//const User = require("./models/user.js");
-//const Product = require('./models/product.js');
 const scrapeDarazProducts = require('./scrapers/daraz.js');
 const scrapePriceoyeProducts = require('./scrapers/priceoye-c.js');
 const scrapeMegaProducts = require('./scrapers/mega.js');
 const scrapeMyshopProducts = require('./scrapers/myshop-c.js');
 const scrapeShophiveProducts = require('./scrapers/shophive-c.js');
-const stringSimilarity = require('string-similarity');
-const scrapeDarazTrendingProducts = require('./scrapers/daraz-trending.js');
-const scrapePriceoyeTrendingProducts = require('./scrapers/priceoye-trending.js');
-const DUMMY_STORES_DATA = require('./dummy_stores_data.js');
+//const scrapeDarazTrendingProducts = require('./scrapers/daraz-trending.js');
+//const scrapePriceoyeTrendingProducts = require('./scrapers/priceoye-trending.js');
 const scrapeDarazProduct = require('./scrapers/daraz2.js');
-//const scrapePriceoyeProduct = require('./scrapers/priceoye2.js');
-//const scrapeMegaProduct = require('./scrapers/mega3.js');
-// const scrapeMyshopProduct = require('./scrapers/myshop2.js');
-// const scrapeShophiveProduct = require('./scrapers/shophive2.js');
+const scrapePriceoyeProduct = require('./scrapers/priceoye2.js');
+const scrapeMegaProduct = require('./scrapers/mega3.js');
+const scrapeMyshopProduct = require('./scrapers/myshop2.js');
+const scrapeShophiveProduct = require('./scrapers/shophive2.js');
 
 const app = express();
 app.use(express.json());
 
-// MySQL database connection
 const sequelize = new Sequelize(
   'projectdb',
   'root',
@@ -37,8 +29,6 @@ const sequelize = new Sequelize(
      dialect: 'mysql'
    }
  );
-
-// models/user.js
 
 const User = sequelize.define('user', {
   user_id: {
@@ -146,7 +136,7 @@ app.post('/signup', async (req, res) => {
      const token = jwt.sign({ userId: user.user_id }, 'your_secret_key', { expiresIn });
  
      // Respond with the token and user ID
-     res.json({ token, expiresIn, user_id: user.user_id });
+     res.json({ token, expiresIn, user_id: user.user_id, username });
   } catch (error) {
     // Handle errors during signup
     if(error["message"] == "Validation error"){
@@ -179,7 +169,7 @@ app.post('/login', async (req, res) => {
     const user_id = user.user_id;
 
     // Respond with the token
-    res.json({ token, expiresIn, user_id });
+    res.json({ token, expiresIn, user_id, username });
   } catch (error) {
     // Handle errors during login
     res.status(500).json({ error: 'Error during login' });
@@ -193,9 +183,7 @@ app.get('/get-products', authenticateToken, (req, res) => {
 // Middleware to authenticate the JWT token
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
-  console.log(authHeader);
   const token = authHeader ? authHeader : null;
-  console.log(token);
 
   if (token == null) {
     console.log("ERROR");
@@ -225,55 +213,12 @@ app.get('/search', (req, res) => {
   res.json(matchedProducts);
 });
 
-// Save a product (for favoriting or setting price alert)
-// app.post('/save-product', authenticateToken, async (req, res) => {
-//   const { token, userID, title, price, imageURL, productURL, basePrice } = req.body;
-
-//   try {
-
-//     // Check if the user exists in the database
-//     const user = await User.findOne({ where: { user_id: userID } });
-
-//     if (!user) {
-//       return res.status(404).json({ error: 'User not found' });
-//     }
-
-//     // Create the product entry in the Product table
-//     const product = await Product.create({
-//       title,
-//       price,
-//       imageUrl: imageURL,
-//       productUrl: productURL,
-//     });
-
-//     if (!product) {
-//       return res.status(500).json({ error: 'Failed to save the product' });
-//     }
-
-//     // Check if the request is for favoriting the product
-//     if (!basePrice) {
-//       // Add the product to the user's favoriteProductsList
-//       await user.addFavoriteProducts(product);
-//     } else {
-//       // Add the product to the user's priceAlertProductsList along with the basePrice
-//       await user.addPriceAlertProducts(product, { through: { basePrice } });
-//     }
-
-//     return res.status(200).json({ success: true });
-//   } catch (error) {
-//     console.error('Error occurred while saving the product:', error);
-//     return res.status(500).json({ error: 'Error occurred while saving the product' });
-//   }
-// });
-
-// Save a product (for favoriting or setting price alert)
 app.post('/save-product', authenticateToken, async (req, res) => {
   const { title, price, imageURL, productURL, basePrice } = req.body;
 
   const userID = req.user.userId;
 
   try {
-    // Check if the user exists in the database
     const user = await User.findOne({  where: { user_id: userID },
       include: [
         { model: Product, as: 'favoriteProductsList' },
@@ -284,11 +229,9 @@ app.post('/save-product', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Check if the product already exists in the Product table
     const product = await Product.findOne({ where: { title, price, productURL } });
 
     if (!product) {
-      // If the product does not exist, create it in the Product table
       const newProduct = await Product.create({
         title,
         price,
@@ -300,29 +243,30 @@ app.post('/save-product', authenticateToken, async (req, res) => {
         return res.status(500).json({ error: 'Failed to save the product' });
       }
 
-      // Check if the request is for favoriting the product
       if (!basePrice) {
-        // Add the product to the user's favoriteProductsList
         await user.addFavoriteProductsList(newProduct);
         console.log("Added new product to favorites");
       } else {
-        // Add the product to the user's priceAlertProductsList along with the basePrice
         await user.addPriceAlertProductsList(newProduct, { through: { basePrice } });
+        console.log("Set price alert on new product");
       }
 
       return res.status(200).json({ success: true });
     } else {
-      // If the product already exists, check if it is in the user's favoriteProductsList
       const isFavorite = await user.hasFavoriteProductsList(product);
 
       if (isFavorite) {
-        // If the product is in the user's favoriteProductsList, remove it from there
         await user.removeFavoriteProductsList(product);
         console.log("Removed product from favorites");
       } else {
-        // If the product is not in the user's favoriteProductsList, add it to there
         await user.addFavoriteProductsList(product);
         console.log("Added product to favorites");
+      }
+      const isPriceAlert = await user.hasPriceAlertProductsList(product);
+
+      if(!isPriceAlert){
+        await user.addPriceAlertProductsList(product, { through: { basePrice } });
+        console.log('Successfuly set price alert on product')
       }
       return res.status(200).json({ success: true });
     }
@@ -333,12 +277,10 @@ app.post('/save-product', authenticateToken, async (req, res) => {
 });
 
 
-// Get favorite products for a user
 app.get('/get-favorite-products', authenticateToken, async (req, res) => {
   const userID = req.user.userId;
 
   try {
-    // Find the user with the provided userID in the database
     const user = await User.findOne({ where: { user_id: userID },
       include: [
       { model: Product, as: 'favoriteProductsList' },
@@ -349,13 +291,11 @@ app.get('/get-favorite-products', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Get the favoriteProductsList of the user
     const favoriteProductsList = await user.getFavoriteProductsList();
 
     if (favoriteProductsList.length === 0) {
       return res.status(200).json({ message: 'No favorite products found' });
     }
-    console.log(favoriteProductsList);
     return res.status(200).json(favoriteProductsList);
   } catch (error) {
     console.error('Error occurred while getting favorite products:', error);
@@ -363,28 +303,26 @@ app.get('/get-favorite-products', authenticateToken, async (req, res) => {
   }
 });
 
-// Get price alert products for a user
 app.get('get-price-alert-products', authenticateToken, async (req, res) => {
-  const { token, userID } = req.query;
+  const userID = req.user.userId;
 
   try {
-    // Authenticate user through token
-    // You should implement your authentication logic here using the token
-
-    // Find the user with the provided userID in the database
-    const user = await User.findOne({ where: { user_id: userID } });
+    const user = await User.findOne({ where: { user_id: userID },
+      include: [
+      { model: Product, as: 'priceAlertProductsList' },
+      ], 
+  });
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Get the priceAlertProductsList of the user
     const priceAlertProductsList = await user.getPriceAlertProductsList();
 
     if (priceAlertProductsList.length === 0) {
       return res.status(200).json({ message: 'No price alert products found' });
     }
-
+    console.log(priceAlertProductsList);
     return res.status(200).json(priceAlertProductsList);
   } catch (error) {
     console.error('Error occurred while getting price alert products:', error);
@@ -392,107 +330,11 @@ app.get('get-price-alert-products', authenticateToken, async (req, res) => {
   }
 });
 
-
-// app.get('/search-product', async (req, res) => {
-//   const searchTerm = "apple";
-  
-//   try {
-//     // Scrape all stores in parallel using Promise.all
-//     const darazProducts = await scrapeDarazProducts(searchTerm).catch((error) => {
-//       console.error('Error occurred while scraping Daraz:', error.message);
-//       return []; // Return an empty array in case of error
-//     });
-
-//     const priceoyeProducts = await scrapePriceoyeProducts(searchTerm).catch((error) => {
-//       console.error('Error occurred while scraping Priceoye:', error.message);
-//       return []; // Return an empty array in case of error
-//     });
-
-//     const megaProducts = await scrapeMegaProducts(searchTerm).catch((error) => {
-//       console.error('Error occurred while scraping Mega:', error.message);
-//       return []; // Return an empty array in case of error
-//     });
-
-//     const myshopProducts = await scrapeMyshopProducts(searchTerm).catch((error) => {
-//       console.error('Error occurred while scraping Myshop:', error.message);
-//       return []; // Return an empty array in case of error
-//     });
-
-//     const shophiveProducts = await scrapeShophiveProducts(searchTerm).catch((error) => {
-//       console.error('Error occurred while scraping Shophive:', error.message);
-//       return []; // Return an empty array in case of error
-//     });
-
-//     // Combine the results from all stores into a single array
-//     const allProducts = [...darazProducts, ...priceoyeProducts, ...megaProducts, ...myshopProducts, ...shophiveProducts];
-//     //const allProducts = [...priceoyeProducts, ...shophiveProducts, ...myshopProducts];
-
-//     // Return the combined product list as a response
-//     console.log(allProducts);
-//     console.log(allProducts.length);
-//     res.send(allProducts);
-//   } catch (error) {
-//     console.error('Error occurred while scraping stores:', error.message);
-//     res.status(500).json({ error: 'Error during scraping' });
-//   }
-// });
-
-// app.get('/search-product', async (req, res) => {
-//   const searchTerm = "apple";
-
-//   try {
-//     // Create an array of promises for each scraping function with a 15-second timeout
-//     const darazPromise = Promise.race([scrapeDarazProducts(searchTerm), delay(15000)]);
-//     const priceoyePromise = Promise.race([scrapePriceoyeProducts(searchTerm), delay(15000)]);
-//     const megaPromise = Promise.race([scrapeMegaProducts(searchTerm), delay(15000)]);
-//     const myshopPromise = Promise.race([scrapeMyshopProducts(searchTerm), delay(15000)]);
-//     const shophivePromise = Promise.race([scrapeShophiveProducts(searchTerm), delay(15000)]);
-
-//     // Wait for all scraping promises to resolve using Promise.all
-//     const darazProducts = await darazPromise.catch((error) => {
-//       console.error('Error occurred while scraping Daraz:', error.message);
-//       return []; // Return an empty array in case of error or timeout
-//     });
-
-//     const priceoyeProducts = await priceoyePromise.catch((error) => {
-//       console.error('Error occurred while scraping Priceoye:', error.message);
-//       return []; // Return an empty array in case of error or timeout
-//     });
-
-//     const megaProducts = await megaPromise.catch((error) => {
-//       console.error('Error occurred while scraping Mega:', error.message);
-//       return []; // Return an empty array in case of error or timeout
-//     });
-
-//     const myshopProducts = await myshopPromise.catch((error) => {
-//       console.error('Error occurred while scraping Myshop:', error.message);
-//       return []; // Return an empty array in case of error or timeout
-//     });
-
-//     const shophiveProducts = await shophivePromise.catch((error) => {
-//       console.error('Error occurred while scraping Shophive:', error.message);
-//       return []; // Return an empty array in case of error or timeout
-//     });
-
-//     // Combine the results from all stores into a single array
-//     const allProducts = [...darazProducts, ...priceoyeProducts, ...megaProducts, ...myshopProducts, ...shophiveProducts];
-
-//     // Return the combined product list as a response
-//     console.log(allProducts);
-//     console.log(allProducts.length);
-//     res.send(allProducts);
-//   } catch (error) {
-//     console.error('Error occurred while scraping stores:', error.message);
-//     res.status(500).json({ error: 'Error during scraping' });
-//   }
-// });
-
 app.get('/search-for-product', authenticateToken, async (req, res) => {
   const searchTerm = req.query.searchString;
   const userID = req.user.userId;
 
   try {
-    // Step 2: Fetch the user's favorite products from the database
     const user = await User.findOne({
       where: { user_id: userID },
       include: [{ model: Product, as: 'favoriteProductsList' }],
@@ -502,20 +344,17 @@ app.get('/search-for-product', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-     // Filter the dummy products based on the search term
     const matchedProducts = dummy_products.filter(product =>
       product.title.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // Step 3: Check if each product is favorited by the user
     const allProducts = await Promise.all(matchedProducts.map( async (product) => {
       const isFavorited = user.favoriteProductsList.some(favProduct =>
         favProduct.title === product.title && favProduct.productUrl === product.productURL
       );      
-      return { ...product, isFavorite: isFavorited }; // Add isFavorite field
+      return { ...product, isFavorite: isFavorited }; 
     }));
 
-    // Step 4: Send back the updated list of products with isFavorite field
     //res.json(matchedProducts);
     console.log(userID);
     res.json(allProducts);
@@ -525,50 +364,53 @@ app.get('/search-for-product', authenticateToken, async (req, res) => {
   }
 });
 
-// Function to create a promise that resolves after a given delay (timeout)
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// Search Product Route
 app.get('/search-product', async (req, res) => {
   const searchTerm = req.query.searchString;
 
   try {
-    // Create an array of promises for each scraping function with a 15-second timeout
     const darazPromise = Promise.race([scrapeDarazProducts(searchTerm), delay(20000)]);
     const priceoyePromise = Promise.race([scrapePriceoyeProducts(searchTerm), delay(20000)]);
-     const megaPromise = Promise.race([scrapeMegaProducts(searchTerm), delay(20000)]);
-     const myshopPromise = Promise.race([scrapeMyshopProducts(searchTerm), delay(20000)]);
+    const megaPromise = Promise.race([scrapeMegaProducts(searchTerm), delay(20000)]);
+     const myshopPromise = Promise.race([scrapeMyshopProducts(searchTerm), delay(200000)]);
      const shophivePromise = Promise.race([scrapeShophiveProducts(searchTerm), delay(20000)]);
 
-    // Wait for all scraping promises to resolve using Promise.allSettled
     const settledPromises = await Promise.allSettled([
       darazPromise,
       priceoyePromise,
-       megaPromise,
-       myshopPromise,
-       shophivePromise,
+      megaPromise,
+      myshopPromise,
+      shophivePromise,
     ]);
 
-    // Process results from completed promises
     const allProducts = [];
 
     settledPromises.forEach((result) => {
       if (result.status === 'fulfilled') {
-        const products = result.value; // The resolved value from the scraping function
+        const products = result.value;
         if (Array.isArray(products)) {
           allProducts.push(...products);
         }
       } else {
-        // Handle errors or timeouts for individual scraping functions
         console.error(`Error or timeout occurred: ${result.reason.message}`);
       }
     });
 
-    // Return the combined product list as a response
     console.log(allProducts);
     console.log(allProducts.length);
-    res.send(allProducts);
+
+    const filteredProducts = allProducts.filter((product) => {
+      return product.title.toLowerCase().includes(searchTerm.toLowerCase());
+    });
+
+    console.log(filteredProducts);
+    console.log(filteredProducts.length);
+    res.send(filteredProducts);
+
   } catch (error) {
     console.error('Error occurred while scraping stores:', error.message);
     res.status(500).json({ error: 'Error during scraping' });
@@ -577,93 +419,142 @@ app.get('/search-product', async (req, res) => {
 
 app.get('/get-daraz-products', async (req, res) => {
   const productURL = req.query.productURL;
-  console.log("Here we go");
   const darazData = await scrapeDarazProduct(productURL);
-  console.log(darazData);
-  res.json(darazData);
-});
-
-// Route to get dummy data for PriceOye
-app.get('/get-priceoye-products', async (req, res) => {
-  const productURL = req.query.productURL;
-  const priceoyeData = await scrapePriceoyeProduct(productURL);
-  res.json(priceoyeData);
-});
-
-// Route to get dummy data for Mega
-app.get('/get-mega-products', async (req, res) => {
-  const megaData = DUMMY_STORES_DATA.mega;
-  res.json(megaData);
-});
-
-// Route to get dummy data for Myshop
-app.get('/get-myshop-products', async (req, res) => {
-  const myshopData = DUMMY_STORES_DATA.myshop;
-  res.json(myshopData);
-});
-
-// Route to get dummy data for Shophive
-app.get('/get-shophive-products', async (req, res) => {
-  const shophiveData = DUMMY_STORES_DATA.shophive;
-  res.json(shophiveData);
-});
-
-// Function to create a promise that resolves after a given delay (timeout)
-/*function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-app.get('/get-top-deals', async (req, res) => {
-
-  try {
-    // Create an array of promises for each scraping function with a 15-second timeout
-    const darazPromise = Promise.race([scrapeDarazTrendingProducts(), delay(100000)]);
-    const priceoyePromise = Promise.race([scrapePriceoyeTrendingProducts(), delay(100000)]);
-    //const megaPromise = Promise.race([scrapeMegaProducts(), delay(15000)]);
-    //const myshopPromise = Promise.race([scrapeMyshopProducts(), delay(15000)]);
-    //const shophivePromise = Promise.race([scrapeShophiveProducts(), delay(15000)]);
-
-    // Wait for all scraping promises to resolve using Promise.allSettled
-    const settledPromises = await Promise.allSettled([
-      darazPromise,
-      priceoyePromise,
-      //megaPromise,
-      //myshopPromise,
-      //shophivePromise,
-    ]);
-
-    // Process results from completed promises
-    const allProducts = [];
-
-    settledPromises.forEach((result) => {
-      if (result.status === 'fulfilled') {
-        const products = result.value; // The resolved value from the scraping function
-        if (Array.isArray(products)) {
-          allProducts.push(...products);
-        }
-      } else {
-        // Handle errors or timeouts for individual scraping functions
-        console.error(`Error or timeout occurred: ${result.reason.message}`);
-      }
-    });
-
-    // Return the combined product list as a response
-    console.log(allProducts);
-    console.log(allProducts.length);
-    res.send(allProducts);
-  } catch (error) {
-    console.error('Error occurred while scraping stores:', error.message);
-    res.status(500).json({ error: 'Error during scraping' });
+  if (darazData.success) {
+    res.json(darazData.data);
+  } else {
+    res.status(500).json({ error: darazData.error });
   }
 });
 
-// Function to create a promise that resolves after a given delay (timeout)
-function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-*/
+app.get('/get-priceoye-products', async (req, res) => {
+  const productURL = req.query.productURL;
+  const priceoyeData = await scrapePriceoyeProduct(productURL);
+  if (priceoyeData.success) {
+    res.json(priceoyeData.data);
+  } else {
+    res.status(500).json({ error: priceoyeData.error });
+  }
+});
 
-//module.exports = sequelize;
+app.get('/get-mega-products', async (req, res) => {
+  const productURL = req.query.productURL;
+  const megaData = await scrapeMegaProduct(productURL);
+  if (megaData.success) {
+    res.json(megaData.data);
+  } else {
+    res.status(500).json({ error: megaData.error });
+  }
+});
+
+app.get('/get-myshop-products', async (req, res) => {
+  const productURL = req.query.productURL;
+  const myshopData = await scrapeMyshopProduct(productURL);
+  if (myshopData.success) {
+    res.json(myshopData.data);
+  } else {
+    res.status(500).json({ error: myshopData.error });
+  }
+});
+
+app.get('/get-shophive-products', async (req, res) => {
+  const productURL = req.query.productURL;
+  const shophiveData = await scrapeShophiveProduct(productURL);
+  if (shophiveData.success) {
+    res.json(shophiveData.data);
+  } else {
+    res.status(500).json({ error: shophiveData.error });
+  }
+});
+
+// async function runScraper(productURL, storeName) {
+//   try {
+//     let productData;
+//     switch (storeName) {
+//       case 'daraz':
+//         productData = await scrapeDarazProduct(productURL);
+//         break;
+//       case 'priceoye':
+//         productData = await scrapePriceoyeProduct(productURL);
+//         break;
+//       case 'mega':
+//         productData = await scrapeMegaProduct(productURL);
+//         break;
+//       case 'myshop':
+//         productData = await scrapeMyshopProduct(productURL);
+//         break;
+//       case 'shophive':
+//         productData = await scrapeShophiveProduct(productURL);
+//         break;
+//       default:
+//         console.error('Invalid store name:', storeName);
+//         return null;
+//     }
+//     return productData;
+//   } catch (error) {
+//     console.error(`Error scraping ${storeName} product:`, error);
+//     return null;
+//   }
+// }
+
+// const runPriceAlertChecks = async () => {
+//   const users = await User.findAll({
+//     include: [
+//       { model: Product, as: 'favoriteProductsList' },
+//       { model: Product, as: 'priceAlertProductsList' },
+//     ],
+//   });
+
+//   for (const user of users) {
+//     const priceAlertProductsList = user.priceAlertProductsList;
+//     if (priceAlertProductsList.length > 0) {
+//       const priceAlertProductData = [];
+
+//       for (const priceAlertProduct of priceAlertProductsList) {
+//         const productURL = priceAlertProduct.productUrl;
+//         const storeName = extractStoreNameFromURL(productURL);
+//         const productData = await runScraper(productURL, storeName);
+//         if (productData) {
+//           const currentPrice = productData.price.replace("Rs.", ""); 
+//           currentPrice = currentPrice.replace(/[^\d,.]/g, ''); 
+//           currentPrice = currentPrice.split('.')[0]; 
+//           currentPrice = parseFloat(currentPrice);
+//           const basePrice = parseFloat(priceAlertProduct.priceAlert.basePrice.replace(/[^\d.]/g, ''));
+//           if (currentPrice <= basePrice) {
+//             priceAlertProductData.push({
+//               productData,
+//               basePrice,
+//             });
+//           }
+//         }
+//       }
+
+//       if (priceAlertProductData.length > 0) {
+//         console.log(`User ${user.username} - Price alert products:`, priceAlertProductData);
+//       }
+//     }
+//   }
+// };
+
+// function extractStoreNameFromURL(url) {
+//   if (url.includes('shophive.com')) {
+//     return 'shophive';
+//   } else if (url.includes('daraz.pk')) {
+//     return 'daraz';
+//   } else if (url.includes('myshop.pk')) {
+//     return 'myshop';
+//   } else if (url.includes('priceoye.pk')) {
+//     return 'priceoye';
+//   } else if (url.includes('mega.pk')) {
+//     return 'mega';
+//   } else {
+//     return null;
+//   }
+// }
+
+// //cron.schedule('0 0 * * *', runPriceAlertChecks);
+
+// runPriceAlertChecks();
 
 // Start the server
 const port = 3000; // Choose the desired port

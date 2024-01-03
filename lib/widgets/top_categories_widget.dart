@@ -45,7 +45,7 @@ class TopCategories extends StatelessWidget {
                   padding: EdgeInsets.all(4),
                   child: CategoryCard(
                     imageUrl:
-                        "https://globalcomputers.pk/wp-content/uploads/2021/07/1-4012-596486-190221012147-1540-11121-220221095046.jpg",
+                        "https://assets.stickpng.com/images/588524d86f293bbfae451a31.png",
                     categoryName: "Laptops",
                   ),
                 ),

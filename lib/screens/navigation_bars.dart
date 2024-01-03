@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../screens/favorites_screen.dart';
 import '../main.dart';
 import './search_product_screen.dart';
+import './profile_screen.dart';
 
 class NavigationBars extends StatefulWidget {
   NavigationBars();
@@ -17,7 +18,7 @@ class _NavigationBarState extends State<NavigationBars> {
     MyHomePage(),
     SearchProduct(),
     FavoritesScreen(),
-    Container(),
+    ProfileScreen(),
   ];
 
   void onTapped(int index) {

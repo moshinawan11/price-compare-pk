@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:price_compare_pk/providers/products_provider.dart';
 import 'package:price_compare_pk/screens/daraz_product_details_screen.dart';
+import '../screens/myshop_product_details_screen.dart';
 import '../models/products.dart';
 import '../providers/favorite_products_provider.dart';
 import 'package:provider/provider.dart';
@@ -11,6 +12,7 @@ import '../models/daraz_product_details.dart';
 import '../screens//product_details_screen2.dart';
 import '../screens/mega_product_details_screen.dart';
 import '../screens/priceoye_product_details_screen.dart';
+import '../screens/shophive_product_details_screen.dart';
 
 class SearchedProduct extends StatefulWidget {
   final Products product;
@@ -44,7 +46,6 @@ class _SearchedProductState extends State<SearchedProduct> {
       } else {
         storeName = null;
       }
-      // Return null if the URL doesn't match any known stores
       if (storeName == 'daraz') {
         Navigator.of(context).push(
           MaterialPageRoute(
@@ -59,31 +60,28 @@ class _SearchedProductState extends State<SearchedProduct> {
                 MegaProductDetailsScreen(widget.product.productURL, storeName),
           ),
         );
-      }
-      // else if (storeName == 'myshop') {
-      //   Navigator.of(context).push(
-      //     MaterialPageRoute(
-      //       builder: (context) =>
-      //           MyshopProductDetailsScreen(widget.product.productURL),
-      //     ),
-      //   );
-      // }
-      else if (storeName == 'priceoye') {
+      } else if (storeName == 'myshop') {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => MyshopProductDetailsScreen(
+                widget.product.productURL, storeName),
+          ),
+        );
+      } else if (storeName == 'priceoye') {
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) => PriceoyeProductDetailsScreen(
                 widget.product.productURL, storeName),
           ),
         );
+      } else if (storeName == 'shophive') {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => ShophiveProductDetailsScreen(
+                widget.product.productURL, storeName),
+          ),
+        );
       }
-      //else if (storeName == 'shophive') {
-      //   Navigator.of(context).push(
-      //     MaterialPageRoute(
-      //       builder: (context) =>
-      //           ShophiveProductDetailsScreen(widget.product.productURL),
-      //     ),
-      //   );
-      // }
     } catch (error) {
       print(error);
     }
@@ -162,7 +160,6 @@ class _SearchedProductState extends State<SearchedProduct> {
                 child: Image.network(widget.product.imageURL),
               ),
               SizedBox(width: 16),
-              // Right side: Product Info
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -200,7 +197,6 @@ class _SearchedProductState extends State<SearchedProduct> {
                   ],
                 ),
               ),
-              // Rightmost side: Heart Icon
               IconButton(
                 onPressed: () {
                   productsProvider

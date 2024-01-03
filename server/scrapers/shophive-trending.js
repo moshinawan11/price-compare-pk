@@ -53,7 +53,7 @@ async function scrapeShophiveTrendingProducts() {
     return productList;
 
   } catch (error) {
-    console.error('Error occurred while scraping Daraz:', error.message);
+    console.log('Error occurred while scraping Daraz:', error.message);
     throw error;
   }
 }

@@ -15,6 +15,7 @@ class ProductsProvider extends ChangeNotifier {
   List<Products> _searchedProducts = [];
   final String? authToken;
   List<Products> _favoriteProducts = [];
+  List<Products> _priceAlertProducts = [];
   DarazProduct? _selectedDarazProduct;
   MegaProduct? _selectedMegaProduct;
   PriceoyeProduct? _selectedPriceoyeProduct;
@@ -30,6 +31,7 @@ class ProductsProvider extends ChangeNotifier {
   MyshopProduct? get selectedMyshopProduct => _selectedMyshopProduct;
   List<Product> get products => _products;
   List<Products> get favoriteProducts => _favoriteProducts;
+  List<Products> get priceAlertProducts => _priceAlertProducts;
   List<Products> get searchedProducts => _searchedProducts;
 
   String? extractStoreNameFromProductURL(String url) {
@@ -48,7 +50,14 @@ class ProductsProvider extends ChangeNotifier {
     }
   }
 
-  String ipaddress = '192.168.0.122';
+  String extractPrice(priceString) {
+    priceString = priceString.replaceAll("Rs.", "");
+    priceString = priceString.replaceAll(RegExp(r'[^\d,.]'), '');
+    priceString = priceString.split('.').first;
+    return priceString;
+  }
+
+  String ipaddress = '192.168.189.147';
 
   Future<void> fetchProductDetails(String productURL) async {
     String? storeName = extractStoreNameFromProductURL(productURL);
@@ -65,27 +74,22 @@ class ProductsProvider extends ChangeNotifier {
           final responseData = json.decode(response.body);
           print(responseData);
           if (storeName == 'daraz') {
-            _selectedDarazProduct = await extractDarazProductData(responseData);
+            _selectedDarazProduct = extractDarazProductData(responseData);
           } else if (storeName == 'mega') {
-            _selectedMegaProduct = await extractMegaProductData(responseData);
+            _selectedMegaProduct = extractMegaProductData(responseData);
           } else if (storeName == 'shophive') {
-            _selectedShophiveProduct =
-                await extractShophiveProductData(responseData);
+            _selectedShophiveProduct = extractShophiveProductData(responseData);
           } else if (storeName == 'priceoye') {
-            _selectedPriceoyeProduct =
-                await extractPriceoyeProductData(responseData);
+            _selectedPriceoyeProduct = extractPriceoyeProductData(responseData);
             print(_selectedPriceoyeProduct);
           } else if (storeName == 'myshop') {
-            _selectedMyshopProduct =
-                await extractMyshopProductData(responseData);
+            _selectedMyshopProduct = extractMyshopProductData(responseData);
           }
 
           notifyListeners();
         }
       } catch (error) {
         print('Error occurred while fetching product details: $error');
-        // Handle any other errors that might occur
-        throw error;
       }
     }
   }
@@ -133,21 +137,10 @@ class ProductsProvider extends ChangeNotifier {
 
         if (responseData is List) {
           productsList = responseData.map((data) {
-            // Extract the price string from the data
-            String priceString = data['price'];
-
-            priceString = priceString.replaceAll("Rs.", "");
-
-            // Remove any non-digit characters except commas
-            priceString =
-                priceString = priceString.replaceAll(RegExp(r'[^\d,.]'), '');
-
-            // Remove the decimal point and anything after it
-            priceString = priceString.split('.').first;
-
+            String priceString = extractPrice(data['price']);
             return Products(
               title: data['title'],
-              price: priceString, // Keep the price as a string
+              price: priceString,
               imageURL: data['imageURL'],
               productURL: data['productURL'],
               //isFavorite: data['isFavorite'],
@@ -162,7 +155,6 @@ class ProductsProvider extends ChangeNotifier {
       }
     } catch (error) {
       print('Error occurred while fetching data: $error');
-      // Handle errors during the HTTP request
       throw error;
     }
   }
@@ -189,12 +181,10 @@ class ProductsProvider extends ChangeNotifier {
 
         notifyListeners();
       } else {
-        // Handle the error when the request fails
         throw HttpException('Failed to add to favorites');
       }
     } catch (error) {
       print('Error occurred while adding to favorites: $error');
-      // Handle any other errors that might occur
       throw error;
     }
   }
@@ -217,15 +207,13 @@ class ProductsProvider extends ChangeNotifier {
       );
 
       if (response.statusCode == 200) {
-        _favoriteProducts.add(product);
+        _priceAlertProducts.add(product);
         notifyListeners();
       } else {
-        // Handle the error when the request fails
         throw HttpException('Failed to set price alert');
       }
     } catch (error) {
       print('Error occurred while setting price alert: $error');
-      // Handle any other errors that might occur
       throw error;
     }
   }
@@ -278,15 +266,7 @@ class ProductsProvider extends ChangeNotifier {
   }
 
   DarazProduct extractDarazProductData(Map<String, dynamic> responseData) {
-    String priceString = responseData['price'];
-
-    priceString = priceString.replaceAll("Rs.", "");
-
-    // Remove any non-digit characters except commas
-    priceString = priceString = priceString.replaceAll(RegExp(r'[^\d,.]'), '');
-
-    // Remove the decimal point and anything after it
-    priceString = priceString.split('.').first;
+    String priceString = extractPrice(responseData['price']);
     return DarazProduct(
       title: responseData['title'],
       price: priceString,
@@ -307,37 +287,28 @@ class ProductsProvider extends ChangeNotifier {
   }
 
   MegaProduct extractMegaProductData(Map<String, dynamic> responseData) {
-    String priceString = responseData['price'];
-
-    priceString = priceString.replaceAll("Rs.", "");
-
-    // Remove any non-digit characters except commas
-    priceString = priceString = priceString.replaceAll(RegExp(r'[^\d,.]'), '');
-
-    // Remove the decimal point and anything after it
-    priceString = priceString.split('.').first;
+    print(responseData['productSpecs']);
+    String priceString = extractPrice(responseData['price']);
     return MegaProduct(
       title: responseData['title'],
-      price: responseData['price'],
+      price: priceString,
       image: responseData['image'],
       brand: responseData['brand'] ?? null,
       productSpecs: responseData['productSpecs'] != null
-          ? Map<String, Map<String, String>>.from(responseData['productSpecs'])
-              .map((key, value) =>
-                  MapEntry(key, Map<String, String>.from(value)))
+          ? Map<String, Map<String, dynamic>>.from(responseData['productSpecs'])
           : null,
     );
   }
 
   ShophiveProduct extractShophiveProductData(
       Map<String, dynamic> responseData) {
+    String priceString = extractPrice(responseData['price']);
     return ShophiveProduct(
       title: responseData['title'],
-      price: responseData['price'],
+      price: priceString,
       image: responseData['image'],
-      brand: responseData['brand'] ? responseData['brand'] : null,
-      availability:
-          responseData['availability'] ? responseData['availability'] : null,
+      brand: responseData['brand'] ?? null,
+      availability: responseData['availability'] ?? null,
       productDetails: responseData['productDetails'] != null
           ? List<String>.from(responseData['productDetails'])
           : null,
@@ -348,9 +319,10 @@ class ProductsProvider extends ChangeNotifier {
   }
 
   MyshopProduct extractMyshopProductData(Map<String, dynamic> responseData) {
+    String priceString = extractPrice(responseData['price']);
     return MyshopProduct(
       title: responseData['title'],
-      price: responseData['price'],
+      price: priceString,
       image: responseData['image'],
       tableData: responseData['tableData'] != null
           ? Map<String, String>.from(responseData['tableData'])
@@ -360,10 +332,11 @@ class ProductsProvider extends ChangeNotifier {
 
   PriceoyeProduct extractPriceoyeProductData(
       Map<String, dynamic> responseData) {
+    String priceString = extractPrice(responseData['price']);
     print(responseData['specifications']);
     return PriceoyeProduct(
       title: responseData['title'],
-      price: responseData['price'],
+      price: priceString,
       image: responseData['image'],
       availability: responseData['availability'] ?? null,
       rating: responseData['rating'] ?? null,

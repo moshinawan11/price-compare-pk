@@ -44,8 +44,7 @@ async function scrapeShophiveProducts(searchString) {
     return productList;
 
   } catch (error) {
-    console.error('Error occurred while scraping Shophive:', error.message);
-    throw error;
+    console.log('Error occurred while scraping Shophive:', error.message);
   }
 }
 

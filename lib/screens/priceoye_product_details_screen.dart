@@ -1,20 +1,21 @@
 import "package:flutter/material.dart";
 import 'package:price_compare_pk/models/daraz_product_details.dart';
-import 'package:price_compare_pk/widgets/product_highlights_widget.dart';
-import 'package:price_compare_pk/widgets/product_specifications_widget.dart';
+import 'package:price_compare_pk/widgets/daraz_product_details/product_highlights_widget.dart';
+import 'package:price_compare_pk/widgets/priceoye_product_details/product_specifications_widget.dart';
 import '../models/products.dart';
 import "../data2.dart";
 import '../widgets/product_info_widget.dart';
 import '../widgets/product_availability_widget.dart';
-import "../widgets/product_details_widget.dart";
+import '../widgets/daraz_product_details/product_details_widget.dart';
 import 'package:provider/provider.dart';
 import '../providers/products_provider.dart';
 import '../screens/navigation_bars.dart';
 import '../models/product.dart';
 import '../providers/products_provider.dart';
-import '../widgets/additional_details_widget.dart';
+import '../widgets/daraz_product_details/additional_details_widget.dart';
 import '../models/priceoye_product_details.dart';
 import 'dart:math' as math;
+import 'package:url_launcher/url_launcher.dart';
 
 class PriceoyeProductDetailsScreen extends StatefulWidget {
   final String productURL;
@@ -52,6 +53,15 @@ class _PriceoyeProductDetailsScreenState
     }
   }
 
+  void _launchProductURL() async {
+    if (!await launchUrl(
+      Uri.parse(widget.productURL),
+      mode: LaunchMode.externalApplication,
+    )) {
+      throw Exception('Could not launch');
+    }
+  }
+
   bool isLoading = true;
 
   @override
@@ -60,12 +70,10 @@ class _PriceoyeProductDetailsScreenState
     //bool isFavorite = productsProvider.isFavorite(product);
     if (product == null) {
       return Scaffold(
-        appBar: AppBar(
-          title: Text('Product Details'),
-        ),
         body: Center(
           child: CircularProgressIndicator(),
         ),
+        backgroundColor: Color.fromARGB(255, 8, 30, 65),
       );
     }
     return Scaffold(
@@ -175,7 +183,9 @@ class _PriceoyeProductDetailsScreenState
                       SizedBox(height: 10),
                       // Add more product details as needed
                       ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          _launchProductURL();
+                        },
                         style: ElevatedButton.styleFrom(
                           primary: Colors
                               .orange, // Set button background color to orange
@@ -211,8 +221,8 @@ class _PriceoyeProductDetailsScreenState
                   // Display the store logo image here
                   Image.asset(
                     "assets/images/${widget.storeName}.png",
-                    height: 120,
-                    width: 120,
+                    height: 150,
+                    width: 130,
                   ),
                 ],
               ),

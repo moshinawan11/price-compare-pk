@@ -60,8 +60,7 @@ async function scrapeDarazProducts(searchString) {
       return productList;
       
     } catch(error){
-      console.error('Error occurred while scraping Daraz:', error.message);
-      throw error;
+      console.log('Error occurred while scraping Daraz:', error.message);
     } finally {
       await browser.close();
     }

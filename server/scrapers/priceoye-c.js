@@ -49,8 +49,7 @@ async function scrapePriceoyeProducts(searchString) {
     return productList;
 
   } catch (error) {
-    console.error('Error occurred while scraping Priceoye:', error.message);
-    throw error;
+    console.log('Error occurred while scraping Priceoye:', error.message);
   }
 }
 

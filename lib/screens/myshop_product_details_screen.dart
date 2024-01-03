@@ -1,33 +1,31 @@
 import "package:flutter/material.dart";
-import 'package:price_compare_pk/models/daraz_product_details.dart';
-import 'package:price_compare_pk/widgets/daraz_product_details/product_highlights_widget.dart';
-import '../widgets/mega_product_details/product_specifications_widget.dart';
+import '../models/myshop_product_details.dart';
+import '../widgets/myshop_product_details.dart/product_specifications_widget.dart';
 import '../models/products.dart';
 import "../data2.dart";
+import '../widgets/product_info_widget.dart';
 import '../widgets/product_availability_widget.dart';
-import '../widgets/daraz_product_details/product_details_widget.dart';
 import 'package:provider/provider.dart';
 import '../providers/products_provider.dart';
 import '../screens/navigation_bars.dart';
 import '../models/product.dart';
 import '../providers/products_provider.dart';
-import '../widgets/daraz_product_details/additional_details_widget.dart';
-import '../models/mega_product_details.dart';
 import 'dart:math' as math;
 import 'package:url_launcher/url_launcher.dart';
 
-class MegaProductDetailsScreen extends StatefulWidget {
+class MyshopProductDetailsScreen extends StatefulWidget {
   final String productURL;
   final String storeName;
-  const MegaProductDetailsScreen(this.productURL, this.storeName);
+  const MyshopProductDetailsScreen(this.productURL, this.storeName);
 
   @override
-  State<MegaProductDetailsScreen> createState() =>
-      _MegaProductDetailsScreenState();
+  State<MyshopProductDetailsScreen> createState() =>
+      _MyshopProductDetailsScreenState();
 }
 
-class _MegaProductDetailsScreenState extends State<MegaProductDetailsScreen> {
-  MegaProduct? product;
+class _MyshopProductDetailsScreenState
+    extends State<MyshopProductDetailsScreen> {
+  MyshopProduct? product;
 
   @override
   void initState() {
@@ -43,7 +41,7 @@ class _MegaProductDetailsScreenState extends State<MegaProductDetailsScreen> {
           .fetchProductDetails(widget.productURL);
       setState(() {
         product = Provider.of<ProductsProvider>(context, listen: false)
-            .selectedMegaProduct;
+            .selectedMyshopProduct;
       });
     } catch (error) {
       // Handle error if product details couldn't be fetched
@@ -152,7 +150,6 @@ class _MegaProductDetailsScreenState extends State<MegaProductDetailsScreen> {
                     ),
                   ),
                   SizedBox(height: 10),
-                  // New Container to display price, arrow button, and store logo
                 ],
               ),
             ),
@@ -179,14 +176,12 @@ class _MegaProductDetailsScreenState extends State<MegaProductDetailsScreen> {
                         ),
                       ),
                       SizedBox(height: 10),
-                      // Add more product details as needed
                       ElevatedButton(
                         onPressed: () {
                           _launchProductURL();
                         },
                         style: ElevatedButton.styleFrom(
-                          primary: Colors
-                              .orange, // Set button background color to orange
+                          primary: Colors.orange,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -216,11 +211,10 @@ class _MegaProductDetailsScreenState extends State<MegaProductDetailsScreen> {
                       ),
                     ],
                   ),
-                  // Display the store logo image here
                   Image.asset(
                     "assets/images/${widget.storeName}.png",
-                    height: 120,
-                    width: 120,
+                    height: 150,
+                    width: 150,
                   ),
                 ],
               ),
@@ -228,8 +222,7 @@ class _MegaProductDetailsScreenState extends State<MegaProductDetailsScreen> {
             SizedBox(
               height: 20,
             ),
-            //ProductHighlights(product!.productHighlights),
-            SpecificationsWidget(product!.productSpecs),
+            SpecificationsWidget(product!.tableData),
           ],
         ),
       ),
