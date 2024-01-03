@@ -1,4 +1,4 @@
-**Price Comparison App using Web Scraping**
+**Price Comparison App using Web Scraping:**
 
 Welcome to our groundbreaking project! This repository introduces a sophisticated mobile application designed to enhance the online shopping experience by empowering users to make well-informed purchasing decisions. The application, meticulously crafted using Flutter for the front end and powered by Node.js and Express on the backend, features a user-friendly interface with real-time price and availability information gathered from various online retailers.
 
